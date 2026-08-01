@@ -2,18 +2,21 @@ using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Shortly.Application.Commands.Link;
 using Shortly.Application.DTOs;
-using Shortly.Application.Interfaces;
+using Shortly.Application.Queries.Link;
 
 namespace Shortly.Pages;
 
 public class IndexModel : PageModel
 {
-    private readonly ILinkService _linkService;
+    private readonly CreateLinkCommandHandler _createLinkHandler;
+    private readonly GetLinksByUserIdQueryHandler _getLinksByUserIdHandler;
 
-    public IndexModel(ILinkService linkService)
+    public IndexModel(CreateLinkCommandHandler createLinkHandler, GetLinksByUserIdQueryHandler getLinksByUserIdHandler)
     {
-        _linkService = linkService;
+        _createLinkHandler = createLinkHandler;
+        _getLinksByUserIdHandler = getLinksByUserIdHandler;
     }
 
     [BindProperty]
@@ -30,7 +33,7 @@ public class IndexModel : PageModel
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userIdClaim is not null && long.TryParse(userIdClaim, out var userId))
             {
-                Links = await _linkService.GetLinksByUserId(userId);
+                Links = await _getLinksByUserIdHandler.Handle(new GetLinksByUserIdQuery(userId));
             }
         }
     }
@@ -47,7 +50,7 @@ public class IndexModel : PageModel
         if (userIdClaim is null || !long.TryParse(userIdClaim, out var userId))
             return Challenge();
 
-        await _linkService.CreateLink(OriginalUrl, userId);
+        await _createLinkHandler.Handle(new CreateLinkCommand(OriginalUrl, userId));
         return RedirectToPage();
     }
 }

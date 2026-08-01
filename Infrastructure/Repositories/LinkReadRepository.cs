@@ -14,15 +14,31 @@ public sealed class LinkReadRepository : ILinkReadRepository
         _context = context ?? throw new ArgumentNullException(nameof(context));
     }
 
-    public Task<Link?> GetByIdAsync(long id)
-        => _context.Links.AsNoTracking().FirstOrDefaultAsync(l => l.Id == id);
+    public Task<LinkReadModel?> GetByIdAsync(long id)
+        => _context.LinkReadModels.AsNoTracking().FirstOrDefaultAsync(l => l.Id == id);
 
-    public Task<Link?> GetByShortUrlAsync(string shortUrl)
-        => _context.Links.AsNoTracking().FirstOrDefaultAsync(l => l.ShortUrl == shortUrl);
+    public Task<LinkReadModel?> GetByShortUrlAsync(string shortUrl)
+        => _context.LinkReadModels.AsNoTracking().FirstOrDefaultAsync(l => l.ShortUrl == shortUrl);
 
-    public Task<List<Link>> GetAllAsync()
-        => _context.Links.AsNoTracking().ToListAsync();
+    public Task<List<LinkReadModel>> GetAllAsync()
+        => _context.LinkReadModels.AsNoTracking().ToListAsync();
 
-    public Task<List<Link>> GetByUserIdAsync(long userId)
-        => _context.Links.AsNoTracking().Where(l => l.UserId == userId).ToListAsync();
+    public Task<List<LinkReadModel>> GetByUserIdAsync(long userId)
+        => _context.LinkReadModels.AsNoTracking().Where(l => l.UserId == userId).ToListAsync();
+
+    public async Task SyncAsync(Link link)
+    {
+        var existing = await _context.LinkReadModels.FirstOrDefaultAsync(l => l.Id == link.Id);
+
+        if (existing is null)
+        {
+            _context.LinkReadModels.Add(new LinkReadModel(link.Id, link.Url, link.ShortUrl, link.Clicks, link.UserId));
+        }
+        else
+        {
+            existing.UpdateClicks(link.Clicks);
+        }
+
+        await _context.SaveChangesAsync();
+    }
 }
