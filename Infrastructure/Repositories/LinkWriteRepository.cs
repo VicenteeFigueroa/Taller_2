@@ -5,11 +5,11 @@ using Shortly.Infrastructure.Persistence;
 
 namespace Shortly.Infrastructure.Repositories;
 
-public sealed class LinkRepository : ILinkRepository
+public sealed class LinkWriteRepository : ILinkWriteRepository
 {
     private readonly AppDbContext _context;
 
-    public LinkRepository(AppDbContext context)
+    public LinkWriteRepository(AppDbContext context)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
     }
@@ -18,13 +18,7 @@ public sealed class LinkRepository : ILinkRepository
         => _context.Links.FirstOrDefaultAsync(l => l.Id == id);
 
     public Task<Link?> GetByShortUrlAsync(string shortUrl)
-        => _context.Links.AsNoTracking().FirstOrDefaultAsync(l => l.ShortUrl == shortUrl);
-
-    public Task<List<Link>> GetAllAsync()
-        => _context.Links.AsNoTracking().ToListAsync();
-
-    public Task<List<Link>> GetByUserIdAsync(long userId)
-        => _context.Links.AsNoTracking().Where(l => l.UserId == userId).ToListAsync();
+        => _context.Links.FirstOrDefaultAsync(l => l.ShortUrl == shortUrl);
 
     public async Task AddAsync(Link link)
         => await _context.Links.AddAsync(link);

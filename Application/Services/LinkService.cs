@@ -7,12 +7,14 @@ namespace Shortly.Application.Services;
 public sealed class LinkService : ILinkService
 {
     private readonly ILogger<LinkService> _logger;
-    private readonly ILinkRepository _linkRepository;
+    private readonly ILinkWriteRepository _writeRepository;
+    private readonly ILinkReadRepository _readRepository;
 
-    public LinkService(ILinkRepository linkRepository, ILogger<LinkService> logger)
+    public LinkService(ILinkWriteRepository writeRepository, ILinkReadRepository readRepository, ILogger<LinkService> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _linkRepository = linkRepository ?? throw new ArgumentNullException(nameof(linkRepository));
+        _writeRepository = writeRepository ?? throw new ArgumentNullException(nameof(writeRepository));
+        _readRepository = readRepository ?? throw new ArgumentNullException(nameof(readRepository));
     }
 
     public async Task<LinkResponse> CreateLink(string url, long userId)
@@ -22,8 +24,8 @@ public sealed class LinkService : ILinkService
         var shortUrl = Ulid.NewUlid().ToString()[..12].ToLowerInvariant();
         var link = new Link(url, shortUrl, userId);
 
-        await _linkRepository.AddAsync(link);
-        await _linkRepository.SaveChangesAsync();
+        await _writeRepository.AddAsync(link);
+        await _writeRepository.SaveChangesAsync();
 
         _logger.LogInformation("Link created successfully with shortUrl: {ShortUrl} and id: {Id}.", link.ShortUrl, link.Id);
         return LinkResponse.From(link);
@@ -33,7 +35,7 @@ public sealed class LinkService : ILinkService
     {
         _logger.LogDebug("Incrementing clicks for linkId: {LinkId}", linkId);
 
-        var link = await _linkRepository.GetByIdAsync(linkId);
+        var link = await _writeRepository.GetByIdAsync(linkId);
         if (link is null)
         {
             _logger.LogWarning("IncrementClicks failed: No link found with id {LinkId}.", linkId);
@@ -41,7 +43,7 @@ public sealed class LinkService : ILinkService
         }
 
         link.IncrementClicks();
-        await _linkRepository.SaveChangesAsync();
+        await _writeRepository.SaveChangesAsync();
 
         _logger.LogInformation("Clicks incremented for linkId: {LinkId}. Total clicks: {Clicks}.", link.Id, link.Clicks);
         return LinkResponse.From(link);
@@ -51,7 +53,7 @@ public sealed class LinkService : ILinkService
     {
         _logger.LogDebug("Retrieving link with shortUrl: {ShortUrl}", shortUrl);
 
-        var link = await _linkRepository.GetByShortUrlAsync(shortUrl);
+        var link = await _readRepository.GetByShortUrlAsync(shortUrl);
         if (link is null)
         {
             _logger.LogWarning("Link not found with shortUrl {ShortUrl}.", shortUrl);
@@ -65,7 +67,7 @@ public sealed class LinkService : ILinkService
     public async Task<List<LinkResponse>> GetAllLinks()
     {
         _logger.LogDebug("Retrieving all links from the database ..");
-        var links = await _linkRepository.GetAllAsync();
+        var links = await _readRepository.GetAllAsync();
 
         _logger.LogInformation("Retrieved {Count} links from the database.", links.Count);
         return links.Select(LinkResponse.From).ToList();
@@ -74,7 +76,7 @@ public sealed class LinkService : ILinkService
     public async Task<List<LinkResponse>> GetLinksByUserId(long userId)
     {
         _logger.LogDebug("Retrieving links for userId: {UserId}", userId);
-        var links = await _linkRepository.GetByUserIdAsync(userId);
+        var links = await _readRepository.GetByUserIdAsync(userId);
 
         _logger.LogInformation("Retrieved {Count} links for userId: {UserId}.", links.Count, userId);
         return links.Select(LinkResponse.From).ToList();
