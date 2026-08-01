@@ -73,6 +73,8 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ILinkWriteRepository, LinkWriteRepository>();
 builder.Services.AddScoped<ILinkReadRepository, LinkReadRepository>();
+builder.Services.AddScoped<Shortly.Application.Commands.Link.CreateLinkCommandHandler>();
+builder.Services.AddScoped<Shortly.Application.Commands.Link.IncrementClicksCommandHandler>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ILinkService, LinkService>();
 
