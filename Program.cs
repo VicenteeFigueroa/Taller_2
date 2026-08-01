@@ -73,10 +73,16 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ILinkWriteRepository, LinkWriteRepository>();
 builder.Services.AddScoped<ILinkReadRepository, LinkReadRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
+
+// Registers CQRS command handlers
 builder.Services.AddScoped<Shortly.Application.Commands.Link.CreateLinkCommandHandler>();
 builder.Services.AddScoped<Shortly.Application.Commands.Link.IncrementClicksCommandHandler>();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<ILinkService, LinkService>();
+
+// Registers CQRS query handlers
+builder.Services.AddScoped<Shortly.Application.Queries.Link.GetLinkQueryHandler>();
+builder.Services.AddScoped<Shortly.Application.Queries.Link.GetAllLinksQueryHandler>();
+builder.Services.AddScoped<Shortly.Application.Queries.Link.GetLinksByUserIdQueryHandler>();
 
 // Builds the application with all registered configurations
 var app = builder.Build();
